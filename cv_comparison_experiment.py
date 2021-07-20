@@ -19,7 +19,7 @@ from scipy.stats import entropy
 
 import arff
 
-from cv_balance import optisplit, random_cv, cv_evaluate, check_folds, wld
+from cv_balance import optisplit, random_cv, cv_evaluate, check_folds, rld
 from skmultilearn.model_selection import IterativeStratification
 
 import skmultilearn.model_selection.measures as ms
@@ -161,14 +161,14 @@ def improve_folds(dataset_type, random_state=42, output_dir='results'):
 def create_folds(dataset_type, n_folds=5, random_state=42, output_dir='results'):
 
     own_dcp = lambda n_splits, targets, random_seed: optisplit(n_splits, targets, method='dcp', seed=random_seed)
-    own_wld = lambda n_splits, targets, random_seed: optisplit(n_splits, targets, method='wld', seed=random_seed)
+    own_rld = lambda n_splits, targets, random_seed: optisplit(n_splits, targets, method='rld', seed=random_seed)
 
     datasets = load_datasets(dataset_type)
     if dataset_type in ['small', 'go']:
-        methods = {'SS':stratified, 'PMBSRS':partitioning_cv,  'IS':iterstrat, 'SOIS':szymanski, 'own_dcp':own_dcp, 'own_wld':own_wld, 'random':random_cv}
+        methods = {'SS':stratified, 'PMBSRS':partitioning_cv,  'IS':iterstrat, 'SOIS':szymanski, 'own_dcp':own_dcp, 'own_rld':own_rld, 'random':random_cv}
 
     else:
-        methods = {'own_dcp':own_dcp, 'own_wld':own_wld, 'PMBSRS':partitioning_cv, 'random':random_cv, 'SS':stratified}
+        methods = {'own_dcp':own_dcp, 'own_rld':own_rld, 'PMBSRS':partitioning_cv, 'random':random_cv, 'SS':stratified}
 
     res = {}
     for dataset in datasets.keys():
@@ -246,16 +246,16 @@ def evaluate_folds(dataset_type, random_state, output_dir):
             dcp = cv_evaluate(data[0], targets, class_sizes, method='dcp')
 
             ED = example_distribution(data[0], targets)
-            wld_score = np.mean(wld(data[0], targets))
+            rld_score = np.mean(rld(data[0], targets))
             dcp_score = np.mean(dcp)
             runtime = data[2]
 
-            res[dataset][method] = {'ED':ED, 'dcp':dcp_score, 'wld':wld_score, 'runtime':runtime}
+            res[dataset][method] = {'ED':ED, 'dcp':dcp_score, 'rld':rld_score, 'runtime':runtime}
 
     tostr = lambda x: str(x).replace('[','').replace(']','').replace('\'', '')
 
     with open(f'{output_dir}/scores_{dataset_type}_{random_state}.csv', 'w') as f:
-        fields = f'dataset, method, ED, dcp, wld, runtime\n'
+        fields = f'dataset, method, ED, dcp, rld, runtime\n'
         f.write(fields)
         for dataset, results in res.items():
             for method, scores in results.items():

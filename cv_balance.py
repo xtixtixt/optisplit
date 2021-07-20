@@ -10,31 +10,25 @@ from functools import reduce
 from itertools import permutations
 import pandas as pd
 
-def pos_neg_ratio(targets):
-    pos = np.array(targets.sum(axis=0)).ravel() # positive distributions
-    neg = targets.shape[0] - pos # negative distributions
-    neg[neg == 0] = 1 # avoid division by zero
-    return pos / neg
-
-def weighted_pos_neg_ratio(targets):
-    t = np.array(targets.sum(axis=0)).ravel()
-    t[t == 0] = targets.shape[0] # avoid division by zero
-    weights = abs((targets.shape[0]-t)/t)
-    return weights
-
-def wld(folds, targets):
+def rld(folds, targets):
     tt = deepcopy(targets)
-    all_d = weighted_pos_neg_ratio(tt)
     res = []
+    di = np.array(tt.sum(axis=0)).ravel() / tt.shape[0]
     for f in folds:
-        all_f = weighted_pos_neg_ratio(tt[f[1]])
-        t = np.array(tt[f[1]].mean(axis=0)).ravel()
-        sums = np.array(tt[f[1]].sum(axis=0) == 0).ravel()
-        t[sums] = 1/tt[f[1]].shape[0]
-        res.append(abs(all_f - all_d)*t)
+        pij = np.array(tt[f[1]].sum(axis=0)).ravel() / len(f[1])
+        res.append((abs((di - pij)/di)))
     res = np.stack(res)
     return res.mean(axis=0)
 
+def dcp(folds, targets):
+    tt = deepcopy(targets)
+    res = []
+    Si = np.array(tt.sum(axis=0)).ravel()
+    for f in folds:
+        Sji = np.array(tt[f[1]].sum(axis=0)).ravel()
+        res.append(Sji)
+    res = np.stack(res)
+    return (res / Si).max(axis=0) - 1/len(folds)
 
 def cv_evaluate(folds, targets, class_sizes, method='original', evaluate_min=False):
     """Return X, Y evaluation metrics for a cv"""
@@ -45,21 +39,11 @@ def cv_evaluate(folds, targets, class_sizes, method='original', evaluate_min=Fal
         targets[:,pos_index] = (targets[:,pos_index] == 0).astype(np.int)
         class_sizes = targets.sum(axis=0)
 
-    test_sets = [f[1] for f in folds]
-    target_sums = [targets[t].sum(axis=0) for t in test_sets]
-    max_subset_size = np.stack([np.array(t) for t in target_sums])[:,0,:].max(axis=0)
-
-    min_subset_size = np.stack([np.array(t) for t in target_sums])[:,0,:].min(axis=0)
-
-    x0 = class_sizes - max_subset_size
-    x1 = max_subset_size / class_sizes
-    x3 = x0/class_sizes
-
     K = len(folds)
     if method == 'dcp':
-        res =  (K-1)/K - x3
-    elif method == 'wld':
-        res = np.array(wld(folds, targets)).ravel()
+        res = np.array(dcp(folds, targets)).ravel()
+    elif method == 'rld':
+        res = np.array(rld(folds, targets)).ravel()
     else:
         raise NotImplementedError('invalid method')
 
@@ -148,7 +132,7 @@ def calc_transfer(targets, A, folds, n_splits):
     assert sum(n_transfer) == 0, 'Balancing failed'
     return n_transfer
 
-def optisplit(n_splits, targets, method='wld', max_epochs=3, seed=42, initial_folds=None):
+def optisplit(n_splits, targets, method='rld', max_epochs=3, seed=42, initial_folds=None):
 
     np.random.seed(seed)
 

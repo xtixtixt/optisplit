@@ -72,15 +72,15 @@ def mk_y(size, n_folds):
 def plot_metrics():
 
     datas  = joblib.load('results/res.joblib')
-    methods = ['wld', 'ld', 'dcp']
+    methods = ['rld', 'ld', 'dcp']
 
     for method in methods:
         plt.clf()
         for name in datas:
             data = datas[name]
             neg_targets = (data[1] == 0).astype(np.int)
-            if method=='wld':
-                res= np.array(cv_balance.wld(data[0], data[1])).ravel()
+            if method=='rld':
+                res= np.array(cv_balance.rld(data[0], data[1])).ravel()
             elif method=='ld':
                 res = ld(data[0], data[1], np.arange(data[1].shape[1]))
             elif method=='dcp':
@@ -95,8 +95,8 @@ def plot_metrics():
 
         if method == 'dcp':
             method = 'DCP'
-        if method == 'wld':
-            method = 'wLD'
+        if method == 'rld':
+            method = 'rLD'
         if method == 'ld':
             method = 'LD'
 
@@ -113,7 +113,8 @@ def plot_metrics():
 
         plt.xlabel('Class size')
         plt.ylabel('Class score')
-        plt.legend()
+        if method == 'LD':
+            plt.legend()
         plt.savefig(f'results/{method}.pdf')
 
 if __name__ == '__main__':
