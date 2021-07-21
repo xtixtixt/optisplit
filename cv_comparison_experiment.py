@@ -246,16 +246,17 @@ def evaluate_folds(dataset_type, random_state, output_dir):
             dcp = cv_evaluate(data[0], targets, class_sizes, method='dcp')
 
             ED = example_distribution(data[0], targets)
+            LD = label_distribution(data[0], targets)
             rld_score = np.mean(rld(data[0], targets))
             dcp_score = np.mean(dcp)
             runtime = data[2]
 
-            res[dataset][method] = {'ED':ED, 'dcp':dcp_score, 'rld':rld_score, 'runtime':runtime}
+            res[dataset][method] = {'ED':ED, 'LD':LD, 'dcp':dcp_score, 'rld':rld_score, 'runtime':runtime}
 
     tostr = lambda x: str(x).replace('[','').replace(']','').replace('\'', '')
 
     with open(f'{output_dir}/scores_{dataset_type}_{random_state}.csv', 'w') as f:
-        fields = f'dataset, method, ED, dcp, rld, runtime\n'
+        fields = f'dataset, method, ED, LD, dcp, rld, runtime\n'
         f.write(fields)
         for dataset, results in res.items():
             for method, scores in results.items():
