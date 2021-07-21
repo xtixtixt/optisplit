@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir results
+
 output_dir="results"
 
 python evaluation_metric_experiment.py
