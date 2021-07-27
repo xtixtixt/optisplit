@@ -133,6 +133,35 @@ def calc_transfer(targets, A, folds, n_splits):
     return n_transfer
 
 def optisplit(n_splits, targets, method='rld', max_epochs=3, seed=42, initial_folds=None):
+    """Run Optisplit.
+
+    Parameters
+    ----------
+    n_splits : int
+        Number of cross validation folds
+
+    targets : scipy csr matrix
+        Target matrix
+
+    method : str (rld or dcp), default=rld
+        Optimisation method
+
+    max_epochs: int, defauld=3
+        Number of times to run optisplit over the data
+
+    seed: int, default=42
+        Random seed
+
+    initial_folds: list, default=None
+        List of numpy arrays containing cross validation fold indices. These
+        are used as the initial folds.
+
+    Returns
+    -------
+    list
+        list of n_split tuples containing numpy arrays containing training and test fold indices.
+    """
+
 
     np.random.seed(seed)
 

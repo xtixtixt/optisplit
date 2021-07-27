@@ -16,3 +16,12 @@ method comparison results (Table 2 in the article) can be found in the files
 in 'results/*.pdf'.
 
 The file cv_balance.py contains an implementation of the Optisplit algorithm.
+It can be used in the following manner:
+
+```
+from cv_balance import optisplit
+from cv_comparison_experiment import load_datasets
+
+y = load_datasets('small')['delicious']
+folds = optisplit(n_splits=5, targets=y)
+```
