@@ -211,7 +211,7 @@ def ld(folds, targets, index):
 
 def label_distribution(folds, targets):
     """parallelised ld for large datasets"""
-    n_jobs = 50
+    n_jobs = 1
     L = targets.shape[1]
     index = np.array_split(np.arange(L), n_jobs)
     parallel = Parallel(n_jobs=n_jobs)
