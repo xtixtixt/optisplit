@@ -1,14 +1,11 @@
-from copy import deepcopy
 import time
-from datetime import timedelta
-from itertools import count
-import joblib
+
 import numpy as np
 import scipy.sparse as sp
+
+from copy import deepcopy
+from datetime import timedelta
 from pdb import set_trace as bp
-from functools import reduce
-from itertools import permutations
-import pandas as pd
 
 def rld(folds, targets):
     tt = deepcopy(targets)
@@ -30,16 +27,9 @@ def dcp(folds, targets):
     res = np.stack(res)
     return (res / Si).max(axis=0) - 1/len(folds)
 
-def cv_evaluate(folds, targets, class_sizes, method='original', evaluate_min=False):
+def cv_evaluate(folds, targets, class_sizes, method='original'):
     """Return X, Y evaluation metrics for a cv"""
 
-    if evaluate_min:
-        targets2 = deepcopy(targets)
-        pos_index = np.where(class_sizes > 0.5*targets.shape[0])[0]
-        targets[:,pos_index] = (targets[:,pos_index] == 0).astype(np.int)
-        class_sizes = targets.sum(axis=0)
-
-    K = len(folds)
     if method == 'dcp':
         res = np.array(dcp(folds, targets)).ravel()
     elif method == 'rld':
@@ -47,10 +37,6 @@ def cv_evaluate(folds, targets, class_sizes, method='original', evaluate_min=Fal
     else:
         raise NotImplementedError('invalid method')
 
-    if evaluate_min:
-        targets = targets2
-        res = x0
-        return np.array(res).ravel(), class_sizes
     return np.array(res).ravel()
 
 

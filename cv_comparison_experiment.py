@@ -1,28 +1,19 @@
-import numpy as np
-import scipy
-import scipy.sparse as sp
-from copy import deepcopy
-
-from joblib import Parallel, delayed
-from pdb import set_trace as bp
-from functools import reduce
-
-from pathlib import Path
-
 import argparse
 import sys
-import joblib
-from datetime import timedelta
 import time
 
-from scipy.stats import entropy
-
 import arff
+import joblib
+import numpy as np
+import scipy.sparse as sp
 
-from cv_balance import optisplit, random_cv, cv_evaluate, check_folds, rld
+from copy import deepcopy
+from datetime import timedelta
+from joblib import Parallel, delayed
+from pdb import set_trace as bp
 from skmultilearn.model_selection import IterativeStratification
 
-import skmultilearn.model_selection.measures as ms
+from cv_balance import optisplit, random_cv, cv_evaluate, check_folds, rld
 
 sys.path.append('stratified_sampling_for_XML/stratify_function/')
 from stratify import stratified_train_test_split
@@ -130,7 +121,7 @@ def partitioning_cv(n_folds, targets, random_state=42):
     folds = [(np.setdiff1d(np.arange(targets.shape[0]), f[1]), f[1]) for f in folds]
     if not check_folds(folds, targets):
         bp()
-        check_folds(folds0, targets)
+        check_folds(folds, targets)
 
     return folds
 
@@ -191,7 +182,6 @@ def create_folds(dataset_type, n_folds=5, random_state=42, output_dir='results')
 
 def ld(folds, targets, index):
     res = np.zeros(len(index))
-    means = np.array(targets.mean(axis=0)).ravel()
     for i in index:
         k = len(folds)
         for j in range(k):
@@ -256,7 +246,7 @@ def evaluate_folds(dataset_type, random_state, output_dir):
     tostr = lambda x: str(x).replace('[','').replace(']','').replace('\'', '')
 
     with open(f'{output_dir}/scores_{dataset_type}_{random_state}.csv', 'w') as f:
-        fields = f'dataset, method, ED, LD, dcp, rld, runtime\n'
+        fields = 'dataset, method, ED, LD, dcp, rld, runtime\n'
         f.write(fields)
         for dataset, results in res.items():
             for method, scores in results.items():

@@ -1,14 +1,16 @@
-import numpy as np
 import warnings
-from pdb import set_trace as bp
-import joblib
-import scipy.sparse as sp
-from copy import deepcopy
-import matplotlib.pyplot as plt
 
+import numpy as np
+import joblib
+import matplotlib.pyplot as plt
+import scipy.sparse as sp
+
+from copy import deepcopy
+from pdb import set_trace as bp
+
+import cv_balance
 
 from cv_comparison_experiment import ld
-import cv_balance
 
 np.set_printoptions(formatter={'float': lambda x: "{0:0.5f}".format(x)})
 warnings.filterwarnings('ignore', message='Comparing a sparse matrix with 0 using == is inefficient')
@@ -78,7 +80,6 @@ def plot_metrics():
         plt.clf()
         for name in datas:
             data = datas[name]
-            neg_targets = (data[1] == 0).astype(np.int)
             if method=='rld':
                 res= np.array(cv_balance.rld(data[0], data[1])).ravel()
             elif method=='ld':
