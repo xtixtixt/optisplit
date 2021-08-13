@@ -103,6 +103,7 @@ def plot_metrics():
 
         params = {'legend.fontsize': '16',
                   'figure.figsize': (4.4, 3.3),
+                  # 'figure.figsize': (5, 4),
                  'axes.labelsize': '16',
                  'axes.titlesize':'16',
                  'xtick.labelsize':'16',
@@ -112,10 +113,20 @@ def plot_metrics():
         plt.rcParams.update(params)
         plt.locator_params(axis='y', nbins=4)
 
-        plt.xlabel('Class size')
-        plt.ylabel('Class score')
+        plt.xlabel('Class size', labelpad=-5)
+        if method=='DCP':
+            plt.ylabel('Class score', labelpad=-2)
+        else:
+            plt.ylabel('Class score')
         if method == 'LD':
             plt.legend()
+        if method == 'rLD':
+            plt.xlabel('Class size', fontsize=16)
+            plt.ylabel('Class score', fontsize=16)
+            plt.xticks(fontsize=16)
+            plt.yticks(fontsize=16)
+
+
         plt.savefig(f'results/{method}.pdf')
 
 if __name__ == '__main__':
