@@ -1,3 +1,6 @@
+# This is a version of https://github.com/maxitron93/stratified_sampling_for_XML with modifications that allow it to be used for cross validation experiments.
+
+
 Code and supplementary material for: Stratified Sampling for Extreme Multi-label Data
 
 # Instructions
