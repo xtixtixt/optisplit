@@ -27,6 +27,18 @@ def dcp(folds, targets):
     res = np.stack(res)
     return (res / Si).max(axis=0) - 1/len(folds)
 
+def ld(folds, targets):
+    tt = deepcopy(targets)
+    res = []
+    di = np.array(tt.sum(axis=0)).ravel() / tt.shape[0]
+    di = np.where(di == 1, (tt.shape[0]-1)/tt.shape[0], di) # avoid division by zero
+    for f in folds:
+        pij = np.array(tt[f[1]].sum(axis=0)).ravel() / len(f[1])
+        pij = np.where(pij == 1, (len(f[1])-1)/len(f[1]), pij)
+        res.append(abs((pij/(1-pij) - di/(1-di))))
+    res = np.stack(res)
+    return res.mean(axis=0)
+
 def cv_evaluate(folds, targets, class_sizes, method='original'):
     """Return X, Y evaluation metrics for a cv"""
 
@@ -34,6 +46,8 @@ def cv_evaluate(folds, targets, class_sizes, method='original'):
         res = np.array(dcp(folds, targets)).ravel()
     elif method == 'rld':
         res = np.array(rld(folds, targets)).ravel()
+    elif method == 'ld':
+        res = np.array(ld(folds, targets)).ravel()
     else:
         raise NotImplementedError('invalid method')
 

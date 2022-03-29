@@ -13,13 +13,14 @@ from joblib import Parallel, delayed
 from pdb import set_trace as bp
 from skmultilearn.model_selection import IterativeStratification
 
-from cv_balance import optisplit, random_cv, cv_evaluate, check_folds, rld
+from cv_balance import optisplit, random_cv, cv_evaluate, check_folds, rld, ld
 
 sys.path.append('stratified_sampling_for_XML/stratify_function/')
 from stratify import stratified_train_test_split
 
 import warnings
 warnings.filterwarnings('ignore', message='Comparing a sparse matrix with 0 using == is inefficient')
+
 
 def load_datasets(dataset_type):
     datasets = {}
@@ -56,16 +57,19 @@ def load_datasets(dataset_type):
     return datasets
 
 def iterstrat(n_folds, targets, random_state=42):
+    """Iterative stratification"""
     X = np.zeros((targets.shape[0], 1))
     k_fold = IterativeStratification(n_splits=n_folds, random_state=random_state).split(X,targets)
     return list(k_fold)
 
-def szymanski(n_folds, targets, random_state=42):
+def sois(n_folds, targets, random_state=42):
+    """Second order iterative stratification"""
     X = np.zeros((targets.shape[0], 1))
     k_fold = IterativeStratification(n_splits=n_folds, random_state=random_state, order=2).split(X,targets)
     return list(k_fold)
 
 def stratified(n_folds, targets, random_state=42):
+    """Stratified sampling"""
     res = []
 
     remaining = np.arange(targets.shape[0])
@@ -87,17 +91,10 @@ def stratified(n_folds, targets, random_state=42):
         remaining = remaining2
 
     res = [(np.setdiff1d(np.arange(targets.shape[0]), f[1]), f[1]) for f in res]
-    if not check_folds(res, targets):
-        bp()
-        check_folds(res, targets)
     return res
 
-
-def remove(remaining, split):
-    remaining2 = np.setdiff1d(remaining, remaining[split])
-    return remaining2
-
 def partitioning_cv(n_folds, targets, random_state=42):
+    """Partitioning method based on stratified random sampling"""
     np.random.seed(random_state)
     frequencies = np.array(np.mean(targets, axis=0)).ravel()
 
@@ -117,15 +114,18 @@ def partitioning_cv(n_folds, targets, random_state=42):
             res.append(substratas[i][j])
         folds.append((None, np.concatenate(res).ravel()))
 
-
     folds = [(np.setdiff1d(np.arange(targets.shape[0]), f[1]), f[1]) for f in folds]
-    if not check_folds(folds, targets):
-        bp()
-        check_folds(folds, targets)
 
     return folds
 
-def improve_folds(dataset_type, random_state=42, output_dir='results'):
+
+def remove(remaining, split):
+    remaining2 = np.setdiff1d(remaining, remaining[split])
+    return remaining2
+
+
+def improve_split(dataset_type, random_state=42, output_dir='results'):
+    """Use optisplit to improve an existing split"""
     np.random.seed(random_state)
     folds = joblib.load(f'{output_dir}/folds_{dataset_type}_{random_state}.joblib')
 
@@ -153,13 +153,14 @@ def create_folds(dataset_type, n_folds=5, random_state=42, output_dir='results')
 
     own_dcp = lambda n_splits, targets, random_seed: optisplit(n_splits, targets, method='dcp', seed=random_seed)
     own_rld = lambda n_splits, targets, random_seed: optisplit(n_splits, targets, method='rld', seed=random_seed)
+    own_ld = lambda n_splits, targets, random_seed: optisplit(n_splits, targets, method='ld', seed=random_seed)
 
     datasets = load_datasets(dataset_type)
     if dataset_type in ['small', 'go']:
-        methods = {'SS':stratified, 'PMBSRS':partitioning_cv,  'IS':iterstrat, 'SOIS':szymanski, 'own_dcp':own_dcp, 'own_rld':own_rld, 'random':random_cv}
+        methods = {'SS':stratified, 'PMBSRS':partitioning_cv,  'IS':iterstrat, 'SOIS':sois, 'own_ld':own_ld, 'own_dcp':own_dcp, 'own_rld':own_rld, 'random':random_cv}
 
     else:
-        methods = {'own_dcp':own_dcp, 'own_rld':own_rld, 'PMBSRS':partitioning_cv, 'random':random_cv, 'SS':stratified}
+        methods = {'own_ld':own_ld, 'own_dcp':own_dcp, 'own_rld':own_rld, 'PMBSRS':partitioning_cv, 'random':random_cv, 'SS':stratified}
 
     res = {}
     for dataset in datasets.keys():
@@ -178,35 +179,6 @@ def create_folds(dataset_type, n_folds=5, random_state=42, output_dir='results')
             except:
                 print(f'Error in {method} on {dataset} - skipped')
     joblib.dump(res, f'{output_dir}/folds_{dataset_type}_{random_state}.joblib')
-
-
-def ld(folds, targets, index):
-    res = np.zeros(len(index))
-    for i in index:
-        k = len(folds)
-        for j in range(k):
-            index = folds[j][1]
-            Sj = len(index)
-            Sji = targets[index, i].getnnz()
-
-            if Sj == Sji:
-                # all examples positive in this fold
-                continue
-
-            try:
-                res[i] += 1/k * np.abs(Sji/(Sj-Sji) - targets[:, i].sum()/(targets.shape[0] - targets[:, i].sum()))
-            except:
-                bp()
-    return res
-
-def label_distribution(folds, targets):
-    """parallelised ld for large datasets"""
-    n_jobs = 1
-    L = targets.shape[1]
-    index = np.array_split(np.arange(L), n_jobs)
-    parallel = Parallel(n_jobs=n_jobs)
-    scores = np.concatenate(parallel(delayed(ld)(folds, targets, index[i]) for i in range(n_jobs)))
-    return scores.mean()
 
 def example_distribution(folds, targets):
     k = len(folds)
@@ -236,7 +208,7 @@ def evaluate_folds(dataset_type, random_state, output_dir):
             dcp = cv_evaluate(data[0], targets, class_sizes, method='dcp')
 
             ED = example_distribution(data[0], targets)
-            LD = label_distribution(data[0], targets)
+            LD = np.mean(ld(data[0], targets))
             rld_score = np.mean(rld(data[0], targets))
             dcp_score = np.mean(dcp)
             runtime = data[2]
@@ -269,5 +241,5 @@ if __name__ == '__main__':
     if args.evaluation:
         evaluate_folds(dataset_type=args.dataset_type, random_state=args.random_state, output_dir=args.output_dir)
     if args.improve:
-        improve_folds(dataset_type=args.dataset_type, random_state=args.random_state, output_dir=args.output_dir)
+        improve_split(dataset_type=args.dataset_type, random_state=args.random_state, output_dir=args.output_dir)
 
