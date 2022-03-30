@@ -176,50 +176,39 @@ def synthetic_data_experiment():
     for i, name in enumerate(datas):
         plt.clf()
         data = datas[name]
-        for j, method in enumerate(methods):
 
-            if method=='rld':
-                res= np.array(cv_balance.rld(data[0], data[1])).ravel()
-                method = 'rLD'
-            elif method=='ld':
-                res = cv_balance.ld(data[0], data[1])
-                method = 'LD'
-            elif method=='dcp':
-                res= cv_balance.cv_evaluate(data[0], data[1], np.array(data[1].sum(axis=0)).ravel(), method=method)
-                method = 'DCP'
-            else:
-                raise NotImplementedError
+        rld = np.array(cv_balance.rld(data[0], data[1])).ravel()
+        ld = cv_balance.ld(data[0], data[1])
+        dcp = cv_balance.cv_evaluate(data[0], data[1], np.array(data[1].sum(axis=0)).ravel(), method='dcp')
 
-            sizes = np.array(data[1].sum(axis=0)).ravel()
-            markers = {'rLD':'.', 'LD':'+', 'DCP':'2'}
+        res_all = np.column_stack((ld, rld, dcp))
 
-            if i == 2 and j == 0:
-                plt.figure(figsize=(6.6, 3.8))
+        sizes = np.array(data[1].sum(axis=0)).ravel()
 
-            elif j == 0 and name == 'Difference':
-                plt.figure(figsize=(5.0, 3.8))
+        if i == 2:
+            plt.figure(figsize=(6.6, 3.8))
+        else:
+            plt.figure(figsize=(5.4, 3.8))
 
-            plt.plot(sizes, res, '.', ms=11, label=method, color='k', marker=markers[method], markevery=0.04)
-            plt.xscale('symlog', linthreshx=0.000001)
-            plt.yscale('symlog', linthreshy=0.000001)
-            plt.ylim(-0.000001, max(res)+3)
 
+        for j, m in enumerate(['.', '+', '2']):
+            plt.plot(sizes, res_all[:,j], ms=11, marker=m, markevery=0.04, alpha=0.9, linestyle='None')
+        plt.xscale('symlog', linthreshx=0.000001)
+        plt.yscale('symlog', linthreshy=0.000001)
+        plt.ylim(-0.000001, np.max(res_all)+3)
         plt.xlabel('Class size', fontsize=16)
         plt.ylabel('Score', fontsize=16)
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
+        plt.title(name, x=0.5, y=0.89, fontsize=16)
 
         if i == 2:
-            plt.legend(bbox_to_anchor=(1.05, 0.5), loc="upper left", fontsize=16)
-            plt.subplots_adjust(left=0.2, right=0.66)
+            lg = plt.legend(['LD', 'rLD', 'DCP'], bbox_to_anchor=(1.05, 0.5), loc="upper left", fontsize=14, title='Measure')
+            title = lg.get_title()
+            title.set_fontsize(14)
 
+        plt.tight_layout()
 
-
-        if name == 'Difference':
-            plt.subplots_adjust(left=0.2, bottom=0.2)
-        else:
-            plt.subplots_adjust(left=0.1, bottom=0.2)
-        plt.title(name, x=0.5, y=0.89, fontsize=16)
         plt.savefig(f'results/{name}.pdf')
 
 if __name__ == '__main__':
