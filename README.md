@@ -19,7 +19,7 @@ method comparison results (Table 3 in the article) can be found in the files
 'results/mean\_scores\*.csv'
 
 
-An implementation of the optisplit algorithm can be installed by running
+An implementation of the optisplit algorithm and the new measures can be installed by running
 
 ```
 pip install optisplit>=0.2
@@ -33,5 +33,7 @@ from optisplit import cv_balance
  
 targets = np.random.binomial(1, 0.05,size=(1000,100))
 folds = cv_balance.optisplit(targets=targets, n_splits=10)
+
+rld_score = cv_balance.rld(folds=folds, targets=targets).mean()
 ```
 
