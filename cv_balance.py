@@ -39,7 +39,7 @@ def ld(folds, targets):
     res = np.stack(res)
     return res.mean(axis=0)
 
-def cv_evaluate(folds, targets, class_sizes, method='original'):
+def cv_evaluate(folds, targets, method='original'):
     """Return X, Y evaluation metrics for a cv"""
 
     if method == 'dcp':
@@ -177,7 +177,7 @@ def optisplit(n_splits, targets, method='rld', max_epochs=3, seed=42, initial_fo
         folds0 = random_cv(n_splits, targets)
     else:
         folds0 = initial_folds
-    res0 = cv_evaluate(folds0, targets, class_sizes, method=method)
+    res0 = cv_evaluate(folds0, targets, method=method)
 
     score0 = np.sum(res0)
 
@@ -196,7 +196,7 @@ def optisplit(n_splits, targets, method='rld', max_epochs=3, seed=42, initial_fo
 
             folds, n_transfer = balance(targets, A, folds, n_splits)
 
-            res1 = cv_evaluate(folds, targets, class_sizes, method=method)
+            res1 = cv_evaluate(folds, targets, method=method)
 
             if np.sum(res0) <= np.sum(res1) or np.all(n_transfer == 0):
                 #balancing unbalanced some other classes
