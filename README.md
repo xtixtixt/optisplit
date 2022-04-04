@@ -1,5 +1,5 @@
-This is the accompanying code for the article 'Novel split quality measures for stratified multilabel cross validation with
-application to large and sparse gene ontology datasets'. The experiments presented in the article can be
+This is the accompanying code for the article [Novel split quality measures for stratified multilabel cross validation with
+application to large and sparse gene ontology datasets](https://www.aimspress.com/article/doi/10.3934/aci.222003). The experiments presented in the article can be
 replicated by following the steps below:
 
 1. Install dependencies
